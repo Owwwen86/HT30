@@ -5,10 +5,12 @@ from django.views.generic import UpdateView
 from rest_framework.pagination import PageNumberPagination
 
 from ads.models import Ad
-
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from rest_framework.viewsets import ModelViewSet
 from ads.serializers import AdDetailSerializer, AdListSerializer, AdSerializer
+
+from ads.permissions import IsAdAuthorOrStaff
 
 
 class AdPagination(PageNumberPagination):
@@ -22,10 +24,21 @@ class AdViewSet(ModelViewSet):
         'retrieve': AdDetailSerializer,
         'list': AdListSerializer
     }
+
+    default_permission = [AllowAny()]
+    permission_list = {"retrieve": [IsAuthenticated()],
+                       "update": [IsAuthenticated(), IsAdAuthorOrStaff()],
+                       "partial_update": [IsAuthenticated(), IsAdAuthorOrStaff()],
+                       "destroy": [IsAuthenticated(), IsAdAuthorOrStaff()],
+                       }
+    
     pagination_class = AdPagination
 
     def get_serializer_class(self):
         return self.serializer_classes.get(self.action, self.default_serializer)
+
+    def get_permissions(self):
+        return self.permission_list.get(self.action, self.default_permission)
 
     def list(self, request, *args, **kwargs):
         categories = request.GET.getlist("cat")

@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
 from ads.models import Ad, Category
+from rest_framework.exceptions import ValidationError
 from users.serializers import UserSerializer, UserLocationSerializer
+
+from ads.models import Selection
+
+from users.models import User, UserRoles
 
 
 class AdSerializer(serializers.ModelSerializer):
@@ -31,4 +36,27 @@ class AdDetailSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
+        fields = '__all__'
+
+
+class SelectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Selection
+        fields = '__all__'
+
+
+class SelectionCreateSerializer(serializers.ModelSerializer):
+    owner = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all(), required=False)
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        if "owner" not in validated_data:
+            validated_data["owner"] = request.user
+        elif "owner" in validated_data and request.user.role == UserRoles.MEMBER \
+                and request.user != validated_data["owner"]:
+            raise ValidationError("Нет доступа")
+        return super().create(validated_data)
+
+    class Meta:
+        model = Selection
         fields = '__all__'

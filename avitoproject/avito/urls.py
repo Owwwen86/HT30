@@ -18,8 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 from ads.views.cat import root
+from rest_framework.routers import SimpleRouter
 
-from avitoproject import settings
+from avito import settings
+from ads.views.selection import SelectionViewSet
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,7 +29,12 @@ urlpatterns = [
     path('cat/', include("ads.urls.cat")),
     path('ad/', include("ads.urls.ad")),
     path('user/', include("users.urls")),
+
 ]
+router = SimpleRouter()
+router.register('selection', SelectionViewSet)
+urlpatterns += router.urls
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
